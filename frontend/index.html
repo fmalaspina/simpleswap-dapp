@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SimpleSwap Interface</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>SimpleSwap Frontend</h1>
+
+    <!-- Connect/Disconnect -->
+    <button id="connectBtn">Connect</button>
+    <p id="accountAddress">Not connected</p>
+
+    <!-- Input Token A -->
+    <label for="amountA">Token A amount:</label>
+    <input type="text" id="amountA" name="amountA" placeholder="0.0" />
+
+    <!-- Input Token B -->
+    <label for="amountB">Token B amount:</label>
+    <input type="text" id="amountB" name="amountB" placeholder="0.0" />
+
+    <!-- Swap button -->
+    <button onclick="performSwap()">Swap</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
