@@ -2,7 +2,7 @@
 const SIMPLE_SWAP = "0x433114f8Ab50FfDbd70E6A8efBc38F0a350E9C50";
 const TOKEN_A     = "0x3b2f60A8E2d06A8C62Dd40f20c150134BC053F4F";
 const TOKEN_B     = "0x90adb40cE3bb333DA14c5e245FD697Ce3f1C0cF6";
-const DECIMALS    = 18;                 // ambos tokens
+const DECIMALS    = 18;            
 const TOKEN_ABI   = [
     {
         "inputs": [
@@ -933,7 +933,7 @@ let provider, signer, swapContract, tokenAContract, tokenBContract;
 const $ = id => document.getElementById(id);
 const parse = v => ethers.utils.parseUnits(v || "0", DECIMALS);
 
-/* choose MetaMask even if Phantom exists */
+
 function metaMaskProvider() {
   if (window.ethereum?.providers?.length) {
     return window.ethereum.providers.find(p => p.isMetaMask) || null;
@@ -941,7 +941,7 @@ function metaMaskProvider() {
   return window.ethereum?.isMetaMask ? window.ethereum : null;
 }
 
-/* ------------ wallet connection ------------ */
+
 async function connectWallet() {
   const mm = metaMaskProvider();
   if (!mm) return alert("MetaMask not detected.");
@@ -955,8 +955,8 @@ async function connectWallet() {
   tokenBContract   = new ethers.Contract(TOKEN_B, TOKEN_ABI, signer);
   
   updateStatus(await signer.getAddress());
-  $("accountBalanceA").textContent = await tokenAContract.balanceOf(signer.getAddress());
-  $("accountBalanceB").textContent = await tokenBContract.balanceOf(signer.getAddress());
+  console.log("Balance A:" + await tokenAContract.balanceOf(signer.getAddress()));
+  console.log("Balance B:" + await tokenBContract.balanceOf(signer.getAddress()));
   evaluateAllowance();               // enable buttons accordingly
 }
 
@@ -968,18 +968,17 @@ function disconnect() {
 
 function updateStatus(addr) {
   $("accountAddress").textContent = addr ? `Connected to: ${addr}` : "Not connected";
-  
   $("connectBtn").textContent     = addr ? "Disconnect" : "Connect";
   $("connectBtn").onclick         = addr ? disconnect   : connectWallet;
 }
 
-/* ------------ UI helpers ------------ */
+
 function disableActionButtons() {
   $("approveBtn").disabled = true;
   $("swapBtn").disabled    = true;
 }
 
-/* Evaluate allowance every time amountA changes or after connect/approve */
+
 async function evaluateAllowance() {
   if (!tokenAContract || !signer) return disableActionButtons();
 
@@ -989,7 +988,8 @@ async function evaluateAllowance() {
 
   const user  = await signer.getAddress();
   const allow = await tokenAContract.allowance(user, SIMPLE_SWAP);
-
+  console.log("Allowance A:" + allow);
+  console.log("Amount in:" + amountIn);
   if (allow.gte(amountIn)) {
     $("approveBtn").disabled = true;
     $("swapBtn").disabled    = false;
@@ -999,24 +999,24 @@ async function evaluateAllowance() {
   }
 }
 
-/* react to typing in amountA */
+
 $("amountA").addEventListener("input", evaluateAllowance);
 
-/* ------------ approve ------------ */
+
 async function approveTokenA() {
   try {
     const amount = parse($("amountA").value.trim());
     const tx = await tokenAContract.approve(SIMPLE_SWAP, amount);
     await tx.wait();
     alert("Approve succeeded");
-    evaluateAllowance();          // will enable Swap
+    evaluateAllowance();          
   } catch (err) {
     console.error(err);
     alert(`Approve failed: ${err.message || err}`);
   }
 }
 
-/* helper: reproduce _key(tokenA,tokenB) from Solidity */
+
 function pairKey(a, b) {
   const [t0, t1] = a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
   return ethers.utils.keccak256(
@@ -1024,35 +1024,34 @@ function pairKey(a, b) {
   );
 }
 
-/* check totalLiquidity > 0 before swapping */
+
 async function poolHasLiquidity() {
   if (!swapContract) return false;
   try {
     const key  = pairKey(TOKEN_A, TOKEN_B);
-    const pool = await swapContract.pools(key); // { reserveA, reserveB, totalLiquidity }
+    const pool = await swapContract.pools(key); 
+    console.log("Liquidity:"+pool.totalLiquidity);
     return !pool.totalLiquidity.isZero();
   } catch {
     return false;
   }
 }
-/* helper: call getAmountOut(amountIn, reserveIn, reserveOut) on-chain */
+
 async function expectedAmountOut(amountIn) {
   const key  = pairKey(TOKEN_A, TOKEN_B);
   const pool = await swapContract.pools(key);
-  const reserveIn  = pool.reserveA;   // TOKEN_A es la address menor
+  const reserveIn  = pool.reserveA;   
   const reserveOut = pool.reserveB;
 
-  // misma fórmula que en el contrato
+  
   return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
 }
 
-/* -------------------------------------------------------------- */
-/* UPDATED swap logic: allowance + liquidity checks               */
-/* -------------------------------------------------------------- */
+
 async function performSwap() {
   if (!swapContract) return alert("Connect wallet first.");
 
-  /* 1) validar monto */
+  
   const amountStr = $("amountA").value.trim();
   if (!amountStr || isNaN(+amountStr) || +amountStr <= 0)
     return alert("Enter a valid Token A amount.");
@@ -1061,18 +1060,21 @@ async function performSwap() {
   const amountOut = await expectedAmountOut(amountIn);
   const key  = pairKey(TOKEN_A, TOKEN_B);
   const pool = await swapContract.pools(key);
+  console.log("Reserve B:" + pool.reserveB);
   if (pool.reserveB.lt(amountOut)) {
     return alert("Pool doesn’t have enough Token B liquidity for this swap.");
   }
-  /* 2) pool liquidity */
+  
   if (!(await poolHasLiquidity())) {
     return alert("Swap failed: pool has no liquidity for this pair.");
   }
 
-  /* 3) allowance */
+  
   const user = await signer.getAddress();
   let allowance = await tokenAContract.allowance(user, SIMPLE_SWAP);
-
+  console.log("Allowance A:"+allowance);
+  console.log("Amount in:"+amountIn);
+  
   if (allowance.lt(amountIn)) {
     const ok = confirm(
       "Allowance is too low. Send an approve transaction now?"
@@ -1082,7 +1084,7 @@ async function performSwap() {
     try {
       const txA = await tokenAContract.approve(SIMPLE_SWAP, amountIn);
       await txA.wait();
-      allowance = amountIn; // assume success
+      allowance = amountIn; 
       alert("Approve successful.");
     } catch (err) {
       console.error(err);
@@ -1090,16 +1092,16 @@ async function performSwap() {
     }
   }
 
-  /* 4) ejecutar swap */
+  
   try {
-    const deadline = Math.floor(Date.now() / 1000) + 600; // 10 min
+    const deadline = Math.floor(Date.now() / 1000) + 600; 
     const tx = await swapContract.swapExactTokensForTokens(
       amountIn,
-      0,                     // amountOutMin
-      [TOKEN_A, TOKEN_B],    // path
+      0,                    
+      [TOKEN_A, TOKEN_B],    
       user,
-      deadline,
-      { gasLimit: 300_000 }, // fallback if node can't estimate
+      deadline, 
+    { gasLimit: 400000}
     );
     await tx.wait();
     alert("Swap completed!");
@@ -1108,25 +1110,23 @@ async function performSwap() {
     alert(`Swap failed: ${err.reason ?? err.message}`);
   }
 
-  /* 5) refrescar botones (approve/swap) */
+  
   evaluateAllowance();
 }
 
-/* ------------ price helpers ------------ */
 async function fetchPrice(inAddr, outAddr) {
   if (!swapContract) return alert("Connect wallet first.");
   const p = await swapContract.getPrice(inAddr, outAddr);
   return ethers.utils.formatUnits(p, DECIMALS);
 }
 async function getPriceAB() { $("priceAB").textContent = `1 A ≈ ${await fetchPrice(TOKEN_A,TOKEN_B)} B`; }
-async function getPriceBA() { $("priceBA").textContent = `1 B ≈ ${await fetchPrice(TOKEN_B,TOKEN_A)} A`; }
 
-/* ------------ boot ------------ */
+
+
 window.addEventListener("load", () => updateStatus(null));
 
-/* expose to HTML */
+
 window.connectWallet = connectWallet;
 window.performSwap   = performSwap;
 window.approveTokenA = approveTokenA;
 window.getPriceAB    = getPriceAB;
-window.getPriceBA    = getPriceBA;

@@ -14,14 +14,6 @@
     <!-- Connect / Disconnect -->
     <button id="connectBtn">Connect</button>
     <p id="accountAddress">Not connected</p>
-    <label for="accountBalanceA">Token A balance:<a id="accountBalanceA"></a></label>
-    <br/>
-    <label for="accountBalanceB">Token B balance:<a id="accountBalanceB"></a></label>
-    <label for="allowanceA">Token A allowance:</label>
-    <p id="allowanceA"></p>
-    <label for="reserveB">Token B reserve:</label>
-    <p id="reserveB"></p>
-    <hr>
     <!-- Amount inputs -->
     <label for="amountA">Token A amount:</label>
     <input type="text" id="amountA" placeholder="0.0" />
@@ -39,8 +31,6 @@
     <button onclick="getPriceAB()">Price A→B</button>
     <span id="priceAB"></span><br />
 
-    <button onclick="getPriceBA()">Price B→A</button>
-    <span id="priceBA"></span>
   </div>
 
   <script src="script.js"></script>

@@ -1,13 +1,16 @@
-# Sample Hardhat Project
+# 🪙 SimpleSwap Frontend Dapp
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+A minimalistic web interface to interact with a smart contract for token swaps (like a simplified Uniswap). This frontend allows users to:
 
-Try running some of the following tasks:
+- Connect their wallet via MetaMask.
+- Approve token transfers.
+- Swap Token A for Token B.
+- Check the current swap price from A to B.
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
-```
+---
+
+## 📁 Project Structure
+.
+├── index.html # Main HTML interface
+├── styles.css # Basic styles
+└── script.js # Core JavaScript logic (wallet, approve, swap, pricing)
