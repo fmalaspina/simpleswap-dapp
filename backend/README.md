@@ -10,7 +10,6 @@ A minimalistic web interface to interact with a smart contract for token swaps (
 ---
 
 ## 📁 Project Structure
-tree -L 2
 .
 ├── backend
 │   ├── artifacts
@@ -27,11 +26,10 @@ tree -L 2
 │   ├── test
 │   ├── tsconfig.json
 │   └── typechain-types
-└── frontend
+└── docs // frontend for github pages
     ├── index.html
     ├── script.js
     └── styles.css
-
 
 ## Tests
 > npx hardhat test
