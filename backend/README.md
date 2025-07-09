@@ -32,7 +32,7 @@ A minimalistic web interface to interact with a smart contract for token swaps (
     └── styles.css
 ```
 ## Access URL
-https://fmalaspina.github.io/simpleswap-dapp/
+# https://fmalaspina.github.io/simpleswap-dapp/
 
 
 ## Tests
