@@ -8,7 +8,7 @@ A minimalistic web interface to interact with a smart contract for token swaps (
 - Check the current swap price from A to B.
 
 ---
-
+```text
 ## 📁 Project Structure
 .
 ├── backend
@@ -30,13 +30,14 @@ A minimalistic web interface to interact with a smart contract for token swaps (
     ├── index.html
     ├── script.js
     └── styles.css
-
+```
 ## Access URL
-https://fmalaspina.github.io/simpleswap-dapp/
+# https://fmalaspina.github.io/simpleswap-dapp/
 
 
 ## Tests
-> npx hardhat test
+```text
+# npx hardhat test
 
 Compiled 11 Solidity files successfully (evm target: paris).
 
@@ -90,8 +91,11 @@ Compiled 11 Solidity files successfully (evm target: paris).
 ······················································································································
 |  Toolchain:  hardhat                                                                                               │
 ······················································································································
+```
 
-> npx hardhat coverage
+## Coverage
+```text
+# npx hardhat coverage
 
 Version
 =======
@@ -140,3 +144,4 @@ All files        |     88.1 |    55.88 |    88.89 |     87.3 |                |
 -----------------|----------|----------|----------|----------|----------------|
 
 > Istanbul reports written to ./coverage/ and ./coverage.json
+```
