@@ -4,7 +4,7 @@ const TOKEN_A     = "0x3b2f60A8E2d06A8C62Dd40f20c150134BC053F4F";
 const TOKEN_B     = "0x90adb40cE3bb333DA14c5e245FD697Ce3f1C0cF6";
 const DECIMALS    = 18;
 
-/* … ABI de los tokens y del swap exactamente como ya los tenías … */
+/* Token and SimpleSwap ABIs */
 const TOKEN_ABI        = [
   {
     "inputs": [
@@ -930,31 +930,31 @@ const SIMPLE_SWAP_ABI  = [
   }
 ];
 /* ------------------------------------------------------------------
-   VARIABLES DE ESTADO
+   State variables
 ------------------------------------------------------------------- */
 let provider, signer, swapContract, tokenAContract, tokenBContract;
-let decA = 18, decB = 18;       // se rellenan al conectar la wallet
+let decA = 18, decB = 18;       
 
 /* ------------------------------------------------------------------
    HELPERS
 ------------------------------------------------------------------- */
 const $ = id => document.getElementById(id);
 
-/** Replica exacta del _key() de Solidity  */
+/** Solidity key construct replication  */
 function pairKey(a, b) {
   const [t0, t1] = a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
   return ethers.utils.solidityKeccak256(["address", "address"], [t0, t1]);
 }
 
-/* decimales dinámicos según sentido */
+
 const inDecimals  = () => $("direction").value === "AtoB" ? decA : decB;
 const outDecimals = () => $("direction").value === "AtoB" ? decB : decA;
 
-/* parsea usando los decimales del token de entrada */
+
 const parseAmt = v => ethers.utils.parseUnits(v || "0", inDecimals());
 
 /* ------------------------------------------------------------------
-   CONEXIÓN CON METAMASK
+   METAMASK Connection
 ------------------------------------------------------------------- */
 function metaMaskProvider() {
   if (window.ethereum?.providers?.length)
@@ -987,9 +987,7 @@ async function connectWallet() {
   await updatePreview();
 }
 
-/* ------------------------------------------------------------------
-   UI helpers
-------------------------------------------------------------------- */
+
 function disconnect() {
   provider = signer = swapContract = tokenAContract = null;
   updateStatus(null);
@@ -1014,7 +1012,7 @@ const outputTokenAddr    = () => $("direction").value === "AtoB" ? TOKEN_B : TOK
 const inputTokenContract = () => $("direction").value === "AtoB" ? tokenAContract : tokenBContract;
 
 /* ------------------------------------------------------------------
-   BALANCE + ALLOWANCE
+   Check BALANCE + ALLOWANCE
 ------------------------------------------------------------------- */
 async function evaluateAllowance() {
   if (!signer || !swapContract) return disableActionButtons();

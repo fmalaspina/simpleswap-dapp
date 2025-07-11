@@ -96,7 +96,7 @@ it("Add liquidity keeping ratio", async () => {
   const minted = preview[2]; 
   expect(minted).to.equal(amt);
 
-  /* 2. envía la tx real */
+  
   await swap
     .connect(alice)
     .addLiquidity(
@@ -147,7 +147,7 @@ it("Add liquidity keeping ratio", async () => {
     await tx.wait();
 
     const pool1 = await swap.pools(keyAB);
-    // k = (reserveA+ΔA)·(reserveB-ΔB)  ;  comprobamos que reserveB decrementó
+    // k = (reserveA+ΔA)·(reserveB-ΔB)  ;  
     expect(pool1.reserveB).to.be.lt(pool0.reserveB);
   });
 

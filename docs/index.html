@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SimpleSwap Interface</title>
 
-  <!-- CSS principal -->
+  <!-- CSS Main -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Estilo extra para dejar bien visibles los botones deshabilitados -->
   <style>
     button:disabled {
       background: #999 !important;   /* gris más oscuro */
@@ -17,7 +16,6 @@
     }
   </style>
 
-  <!-- Ethers 5.x UMD -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -41,6 +39,9 @@
 
     <!-- Approve / Swap -->
     <button id="swapBtn"     onclick="performSwap()"       disabled>Swap</button>
+    
+    <!-- Preview amount -->
+
     <p id="preview">
       Amount to receive: —           
     </p>
@@ -54,7 +55,7 @@
     <p id="priceBA">–</p>
   </div>
 
-  <!-- Lógica de la dApp -->
+  <!-- dApp logic-->
   <script src="script.js"></script>
 </body>
 </html>
