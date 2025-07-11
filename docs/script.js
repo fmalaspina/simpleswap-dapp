@@ -929,35 +929,36 @@ const SIMPLE_SWAP_ABI  = [
     "type": "function"
   }
 ];
-
 /* ------------------------------------------------------------------
    VARIABLES DE ESTADO
 ------------------------------------------------------------------- */
 let provider, signer, swapContract, tokenAContract, tokenBContract;
+let decA = 18, decB = 18;       // se rellenan al conectar la wallet
 
 /* ------------------------------------------------------------------
    HELPERS
 ------------------------------------------------------------------- */
 const $ = id => document.getElementById(id);
-const parse = v => ethers.utils.parseUnits(v || "0", DECIMALS);
 
-/**  Replica exacta del _key() que usa el contrato en Solidity  */
+/** Replica exacta del _key() de Solidity  */
 function pairKey(a, b) {
-  const [t0, t1] =
-    a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
-  return ethers.utils.solidityKeccak256(
-    ["address", "address"],
-    [t0, t1]
-  );
+  const [t0, t1] = a.toLowerCase() < b.toLowerCase() ? [a, b] : [b, a];
+  return ethers.utils.solidityKeccak256(["address", "address"], [t0, t1]);
 }
+
+/* decimales dinámicos según sentido */
+const inDecimals  = () => $("direction").value === "AtoB" ? decA : decB;
+const outDecimals = () => $("direction").value === "AtoB" ? decB : decA;
+
+/* parsea usando los decimales del token de entrada */
+const parseAmt = v => ethers.utils.parseUnits(v || "0", inDecimals());
 
 /* ------------------------------------------------------------------
    CONEXIÓN CON METAMASK
 ------------------------------------------------------------------- */
 function metaMaskProvider() {
-  if (window.ethereum?.providers?.length) {
+  if (window.ethereum?.providers?.length)
     return window.ethereum.providers.find(p => p.isMetaMask) || null;
-  }
   return window.ethereum?.isMetaMask ? window.ethereum : null;
 }
 
@@ -973,8 +974,17 @@ async function connectWallet() {
   tokenAContract = new ethers.Contract(TOKEN_A, TOKEN_ABI, signer);
   tokenBContract = new ethers.Contract(TOKEN_B, TOKEN_ABI, signer);
 
+  // leemos decimales reales
+  decA = await tokenAContract.decimals();
+  decB = await tokenBContract.decimals();
+    const key = pairKey(TOKEN_A, TOKEN_B);
+    const pool = await swapContract.pools(key);
+    console.log("reserveA =", pool.reserveA.toString());
+    console.log("reserveB =", pool.reserveB.toString());
   updateStatus(await signer.getAddress());
-  await evaluateAllowance();      // habilita / deshabilita botones
+  await evaluateAllowance();
+  await updatePrices();
+  await updatePreview();
 }
 
 /* ------------------------------------------------------------------
@@ -987,8 +997,9 @@ function disconnect() {
 }
 
 function updateStatus(addr) {
-  $("accountAddress").textContent =
-    addr ? `Connected to: ${addr}` : "Not connected";
+  $("accountAddress").textContent = addr
+    ? `Connected to: ${addr}`
+    : "Not connected";
   $("connectBtn").textContent = addr ? "Disconnect" : "Connect";
   $("connectBtn").onclick     = addr ? disconnect   : connectWallet;
 }
@@ -998,15 +1009,9 @@ function disableActionButtons() {
   $("swapBtn").disabled    = true;
 }
 
-function inputTokenAddr() {
-  return $("direction").value === "AtoB" ? TOKEN_A : TOKEN_B;
-}
-function outputTokenAddr() {
-  return $("direction").value === "AtoB" ? TOKEN_B : TOKEN_A;
-}
-function inputTokenContract() {
-  return $("direction").value === "AtoB" ? tokenAContract : tokenBContract;
-}
+const inputTokenAddr     = () => $("direction").value === "AtoB" ? TOKEN_A : TOKEN_B;
+const outputTokenAddr    = () => $("direction").value === "AtoB" ? TOKEN_B : TOKEN_A;
+const inputTokenContract = () => $("direction").value === "AtoB" ? tokenAContract : tokenBContract;
 
 /* ------------------------------------------------------------------
    BALANCE + ALLOWANCE
@@ -1014,27 +1019,24 @@ function inputTokenContract() {
 async function evaluateAllowance() {
   if (!signer || !swapContract) return disableActionButtons();
 
-  const amountIn = parse($("amountIn").value.trim());
+  const amountIn = parseAmt($("amountIn").value.trim());
   if (amountIn.eq(0)) return disableActionButtons();
 
-  const user        = await signer.getAddress();
-  const inContract  = inputTokenContract();
-  const balance     = await inContract.balanceOf(user);
-  const allowance   = await inContract.allowance(user, SIMPLE_SWAP);
+  const user       = await signer.getAddress();
+  const inContract = inputTokenContract();
+  const balance    = await inContract.balanceOf(user);
+  const allowance  = await inContract.allowance(user, SIMPLE_SWAP);
 
-  const enoughBal   = balance.gte(amountIn);
-  const enoughAllow = allowance.gte(amountIn);
-
-  $("swapBtn").disabled    = !(enoughBal && enoughAllow);
-  $("approveBtn").disabled = enoughAllow;
+  $("swapBtn").disabled    = !(balance.gte(amountIn) && allowance.gte(amountIn));
+  $("approveBtn").disabled = allowance.gte(amountIn);
 }
 
 /* ------------------------------------------------------------------
-   APPROVE
+   Approve
 ------------------------------------------------------------------- */
 async function approveInputToken() {
   try {
-    const amount = parse($("amountIn").value.trim());
+    const amount = parseAmt($("amountIn").value.trim());
     const tx     = await inputTokenContract().approve(SIMPLE_SWAP, amount);
     await tx.wait();
     alert("Approve succeeded");
@@ -1046,26 +1048,23 @@ async function approveInputToken() {
 }
 
 /* ------------------------------------------------------------------
-   EXPECTED AMOUNT OUT  (con control de reservas en cero)
+*   Expected amount out
 ------------------------------------------------------------------- */
 async function expectedAmountOut(amountIn) {
-  const key  = pairKey(TOKEN_A, TOKEN_B);
-  const pool = await swapContract.pools(key);
+  const key   = pairKey(TOKEN_A, TOKEN_B);
+  const pool  = await swapContract.pools(key);
 
-  const reserveIn  =
-    $("direction").value === "AtoB" ? pool.reserveA : pool.reserveB;
-  const reserveOut =
-    $("direction").value === "AtoB" ? pool.reserveB : pool.reserveA;
+  const reserveIn  = $("direction").value === "AtoB" ? pool.reserveA : pool.reserveB;
+  const reserveOut = $("direction").value === "AtoB" ? pool.reserveB : pool.reserveA;
 
   if (reserveIn.eq(0) || reserveOut.eq(0))
     return ethers.BigNumber.from(0);
 
-  // fórmula de Uniswap-v2 sin fee
-  return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
+  return amountIn.mul(reserveOut).div(reserveIn.add(amountIn));  // sin fee
 }
 
 /* ------------------------------------------------------------------
-   SWAP
+ *  SWAP
 ------------------------------------------------------------------- */
 async function performSwap() {
   if (!swapContract) return alert("Connect wallet first.");
@@ -1074,17 +1073,15 @@ async function performSwap() {
   if (!amountStr || isNaN(+amountStr) || +amountStr <= 0)
     return alert("Enter a valid amount.");
 
-  const amountIn  = parse(amountStr);
-  const amountOut = await expectedAmountOut(amountIn);
-
-  const path  = [inputTokenAddr(), outputTokenAddr()];
-  const user  = await signer.getAddress();
+  const amountIn = parseAmt(amountStr);
+  const path     = [inputTokenAddr(), outputTokenAddr()];
+  const user     = await signer.getAddress();
 
   try {
     const deadline = Math.floor(Date.now() / 1000) + 600;
     const tx = await swapContract.swapExactTokensForTokens(
       amountIn,
-      0,              // slippage 0 para demo
+      0,        
       path,
       user,
       deadline,
@@ -1098,47 +1095,85 @@ async function performSwap() {
   }
 
   await evaluateAllowance();
+  await updatePreview();
 }
 
 /* ------------------------------------------------------------------
-  Get prices
+   Fetch prices
 ------------------------------------------------------------------- */
 async function fetchPrice(inAddr, outAddr) {
   try {
-    // 1) intentá la función del contrato
     const p = await swapContract.getPrice(inAddr, outAddr);
     return Number(ethers.utils.formatUnits(p, DECIMALS)).toPrecision(8);
   } catch (_) {
-    // 2) si revierte (p. ej. pool vacío) devolvé "0"
     return "0";
   }
 }
 
 async function updatePrices() {
-  // precio “canónico” que expone el contrato (A ➜ B)
-  const priceAB = await fetchPrice(TOKEN_A, TOKEN_B);      // p = B / A
+  const priceAB = await fetchPrice(TOKEN_A, TOKEN_B);
   $("priceAB").textContent = `1 A ≈ ${priceAB} B`;
 
-  // su recíproco (B ➜ A)
-  const priceBA =
-    priceAB === "0"
-      ? "0"
-      : Number(1 / priceAB).toPrecision(8);                // 1 / p
+  const priceBA = priceAB === "0" ? "0" : Number(1 / priceAB).toPrecision(8);
   $("priceBA").textContent = `1 B ≈ ${priceBA} A`;
 }
+
+/* ------------------------------------------------------------------
+   Dynamic preview or estimated amount to receive
+------------------------------------------------------------------- */
+async function updatePreview() {
+  if (!swapContract) {
+    $("preview").textContent = "Amount to receive: —";
+    return;
+  }
+
+  const amountStr = $("amountIn").value.trim();
+  if (!amountStr || isNaN(+amountStr) || +amountStr <= 0) {
+    $("preview").textContent = "Amount to receive: —";
+    return;
+  }
+
+  const amountIn = parseAmt(amountStr);
+  const key      = pairKey(TOKEN_A, TOKEN_B);
+  const pool     = await swapContract.pools(key);
+
+  const reserveIn  = $("direction").value === "AtoB" ? pool.reserveA : pool.reserveB;
+  const reserveOut = $("direction").value === "AtoB" ? pool.reserveB : pool.reserveA;
+
+  if (reserveIn.eq(0) || reserveOut.eq(0)) {
+    $("preview").textContent = "Amount to receive: liquidity = 0";
+    return;
+  }
+
+  const amountOut = amountIn.mul(reserveOut).div(reserveIn.add(amountIn));
+  const formatted = Number(
+    ethers.utils.formatUnits(amountOut, outDecimals())
+  ).toFixed(Math.min(outDecimals(), 6));
+
+  $("preview").textContent =
+    `Amount to receive: ${formatted} ${$("direction").value === "AtoB" ? "B" : "A"}`;
+}
+
 /* ------------------------------------------------------------------
    EVENT LISTENERS
 ------------------------------------------------------------------- */
-window.addEventListener("load", () => updateStatus(null));
+window.addEventListener("load", () => {
+  updateStatus(null);
+  updatePrices();
+  updatePreview();
+});
 
-$("amountIn").addEventListener("input",  evaluateAllowance);
+$("amountIn").addEventListener("input", () => {
+  evaluateAllowance();
+  updatePreview();
+});
 
 $("direction").addEventListener("change", () => {
   evaluateAllowance();
   updatePrices();
+  updatePreview();
 });
 
-/* Exponer funciones al HTML */
 window.connectWallet     = connectWallet;
 window.performSwap       = performSwap;
 window.approveInputToken = approveInputToken;
