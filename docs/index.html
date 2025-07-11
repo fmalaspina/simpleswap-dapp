@@ -4,7 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SimpleSwap Interface</title>
+
+  <!-- CSS principal -->
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Estilo extra para dejar bien visibles los botones deshabilitados -->
+  <style>
+    button:disabled {
+      background: #999 !important;   /* gris más oscuro */
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  </style>
+
+  <!-- Ethers 5.x UMD -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
@@ -14,25 +27,31 @@
     <!-- Connect / Disconnect -->
     <button id="connectBtn">Connect</button>
     <p id="accountAddress">Not connected</p>
-    <!-- Amount inputs -->
-    <label for="amountA">Token A amount:</label>
-    <input type="text" id="amountA" placeholder="0.0" />
 
-    <label for="amountB">Token B amount:</label>
-    <input type="text" id="amountB" placeholder="0.0" />
+    <!-- Amount IN -->
+    <label for="amountIn">Amount in:</label>
+    <input type="text" id="amountIn" placeholder="0.0" />
+
+    <!-- Direction selector -->
+    <label for="direction">Direction:</label>
+    <select id="direction">
+      <option value="AtoB">Token&nbsp;A → Token&nbsp;B</option>
+      <option value="BtoA">Token&nbsp;B → Token&nbsp;A</option>
+    </select>
 
     <!-- Approve / Swap -->
-    <button id="approveBtn"  onclick="approveTokenA()" disabled>Approve</button>
-    <button id="swapBtn"     onclick="performSwap()"   enabled>Swap</button>
+    <button id="approveBtn"  onclick="approveInputToken()" disabled>Approve</button>
+    <button id="swapBtn"     onclick="performSwap()"       disabled>Swap</button>
 
     <hr />
 
-    <!-- Price buttons -->
-    <button onclick="getPriceAB()">Price A→B</button>
-    <span id="priceAB"></span><br />
-
+    <!-- Prices -->
+    <button onclick="updatePrices()">Refresh Prices</button>
+    <p id="priceAB">–</p>
+    <p id="priceBA">–</p>
   </div>
 
+  <!-- Lógica de la dApp -->
   <script src="script.js"></script>
 </body>
 </html>

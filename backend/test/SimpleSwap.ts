@@ -27,7 +27,7 @@ describe("SimpleSwap · core flows", () => {
     tokenB = (await TokenF.deploy("Token-B", "TKB", GAS_OPTS)) as Token;
     tokenC = (await TokenF.deploy("Token-C", "TKC", GAS_OPTS)) as Token;
 
-    /* mint 1 000 000 eth a owner y 20 000 eth a cada user */
+    /* mint 1 000 000 eth to an owner and 20 000 eth to users */
     const million = ethers.parseEther("1000000");
     await tokenA.mint(await owner.getAddress(), million, GAS_OPTS);
     await tokenB.mint(await owner.getAddress(), million, GAS_OPTS);
@@ -46,7 +46,7 @@ describe("SimpleSwap · core flows", () => {
 
   /* ───────── addLiquidity bootstrap ───────── */
 
-  it("Owner crea el pool y recibe LP", async () => {
+  it("Someone creates pool an receives LT", async () => {
     const amt = ethers.parseEther("1000");
 
     await tokenA.approve(swap, amt, GAS_OPTS);
@@ -74,8 +74,8 @@ describe("SimpleSwap · core flows", () => {
     expect(pool.reserveA).to.equal(amt);
     expect(pool.reserveB).to.equal(amt);
   });
-/* ───────── segundo proveedor ───────── */
-it("Alice agrega liquidez manteniendo ratio", async () => {
+/* ───────── second fund provider ───────── */
+it("Add liquidity keeping ratio", async () => {
   const amt = ethers.parseEther("100");
   await tokenA.connect(alice).approve(swap, amt, GAS_OPTS);
   await tokenB.connect(alice).approve(swap, amt, GAS_OPTS);
@@ -114,7 +114,7 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
 
   /* ───────── getAmountOut ───────── */
 
-  it("getAmountOut respeta x·y=k", async () => {
+  it("getAmountOut matches x·y=k", async () => {
     const out = await swap.getAmountOut(
       ethers.parseEther("10"),
       ethers.parseEther("1100"),
@@ -128,7 +128,7 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
 
   /* ───────── swapExactTokensForTokens ───────── */
 
-  it("Bob intercambia TKA por TKB", async () => {
+  it("Exchange TKA by TKB", async () => {
     const amountIn = ethers.parseEther("10");
     await tokenA.connect(bob).approve(swap, amountIn, GAS_OPTS);
 
@@ -153,7 +153,7 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
 
   /* ───────── removeLiquidity ───────── */
 
-  it("Owner quema parte de su LP y recibe tokens", async () => {
+  it("Owner burns LT and receives tokens", async () => {
     const lp0   = await swap.balanceOf(await owner.getAddress());
     const burn  = lp0 / 3n;
 
@@ -172,10 +172,10 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
     expect(lp1).to.equal(lp0 - burn);
   });
 
-  /* ───────── reverts esperados ───────── */
+  /* ───────── reverts expected ───────── */
 
-  it("Rechaza swap si el pool no existe", async () => {
-    // Par [TKC, TKA] aún no tiene liquidez
+  it("Revert swap if pool does not exists", async () => {
+    // Pair [TKC, TKA] with no liquidity
     await expect(
       swap.swapExactTokensForTokens(
         1,
@@ -188,7 +188,7 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
     ).to.be.revertedWith("Pool empty");
   });
 
-  it("Rechaza addLiquidity con deadline vencido", async () => {
+  it("Revert addLiquidity passing deadline", async () => {
     await expect(
       swap.addLiquidity(
         tokenA.target,
@@ -203,4 +203,8 @@ it("Alice agrega liquidez manteniendo ratio", async () => {
       ),
     ).to.be.revertedWith("Expired");
   });
+
+
+  
 });
+

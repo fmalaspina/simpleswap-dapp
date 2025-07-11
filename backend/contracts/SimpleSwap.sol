@@ -35,6 +35,7 @@ contract SimpleSwap is ERC20 {
         uint totalLiquidity;  ///< total LT minted for this pair
     }
 
+    
     /// @notice Mapping from `keccak256(token0, token1)` to pool data
     mapping(bytes32 => Pool) public pools;
 
@@ -102,31 +103,31 @@ contract SimpleSwap is ERC20 {
     {
         require(block.timestamp <= deadline, "Expired");
         bytes32 pairKey = _key(tokenA, tokenB);
-        Pool storage p  = pools[pairKey];
-
+        Pool memory _p = pools[pairKey];
+        
         /* ―― first liquidity provider ―― */
-        if (p.totalLiquidity == 0) {
+        if (_p.totalLiquidity == 0) {
             amountASent = amountADesired;
             amountBSent = amountBDesired;
             liquidity   = Math.sqrt(amountASent * amountBSent);
         } else {
             /* ―― subsequent providers keep price ratio invariant ―― */
-            uint amountBOptimal = (amountADesired * p.reserveB) / p.reserveA;
+            uint amountBOptimal = (amountADesired * _p.reserveB) / _p.reserveA;
 
             if (amountBOptimal <= amountBDesired) {
                 require(amountBOptimal >= amountBMin, "Slippage B");
                 amountASent = amountADesired;
                 amountBSent = amountBOptimal;
             } else {
-                uint amountAOptimal = (amountBDesired * p.reserveA) / p.reserveB;
+                uint amountAOptimal = (amountBDesired * _p.reserveA) / _p.reserveB;
                 require(amountAOptimal >= amountAMin, "Slippage A");
                 amountASent = amountAOptimal;
                 amountBSent = amountBDesired;
             }
 
             liquidity = Math.min(
-                (amountASent * p.totalLiquidity) / p.reserveA,
-                (amountBSent * p.totalLiquidity) / p.reserveB
+                (amountASent * _p.totalLiquidity) / _p.reserveA,
+                (amountBSent * _p.totalLiquidity) / _p.reserveB
             );
         }
         require(liquidity > 0, "LIQ=0");
@@ -136,9 +137,10 @@ contract SimpleSwap is ERC20 {
         IERC20(tokenB).transferFrom(msg.sender, address(this), amountBSent);
 
         /* ―― update pool reserves ―― */
-        p.reserveA       += amountASent;
-        p.reserveB       += amountBSent;
-        p.totalLiquidity += liquidity;
+        _p.reserveA      += amountASent;
+        _p.reserveB       += amountBSent;
+        _p.totalLiquidity += liquidity;
+        pools[pairKey] = _p;
 
         /* ―― mint LP tokens ―― */
         _mint(to, liquidity);
@@ -175,20 +177,21 @@ contract SimpleSwap is ERC20 {
         require(balanceOf(msg.sender) >= liquidity, "LP low");
 
         bytes32 pairKey = _key(tokenA, tokenB);
-        Pool storage p  = pools[pairKey];
-
-        /* proportional amounts to withdraw */
-        amountASent = (liquidity * p.reserveA) / p.totalLiquidity;
-        amountBSent = (liquidity * p.reserveB) / p.totalLiquidity;
+         
+        Pool memory _p  = pools[pairKey];
+        
+        amountASent = (liquidity * _p.reserveA) / _p.totalLiquidity;
+        amountBSent = (liquidity * _p.reserveB) / _p.totalLiquidity;
 
         require(amountASent >= amountAMin, "Slippage A");
         require(amountBSent >= amountBMin, "Slippage B");
 
         /* update pool */
-        p.reserveA       -= amountASent;
-        p.reserveB       -= amountBSent;
-        p.totalLiquidity -= liquidity;
+        _p.reserveA       -= amountASent;
+        _p.reserveB       -= amountBSent;
+        _p.totalLiquidity -= liquidity;
 
+        pools[pairKey] = _p;
         _burn(msg.sender, liquidity);                 // burn LT
 
         /* transfer underlying tokens */
@@ -233,10 +236,11 @@ contract SimpleSwap is ERC20 {
         returns (uint price)
     {
         bytes32 k  = _key(tokenA, tokenB);
-        Pool storage p = pools[k];
-        require(p.reserveA > 0 && p.reserveB > 0, "No reserves");
+        Pool memory _p = pools[k];
 
-        price = (p.reserveB * 1e18) / p.reserveA; // A in terms of B
+        require(_p.reserveA > 0 && _p.reserveB > 0, "No reserves");
+
+        price = (_p.reserveB * 1e18) / _p.reserveA; // A in terms of B
     }
 
     /* ────────────────────────────────────────────────────────────
@@ -263,12 +267,12 @@ contract SimpleSwap is ERC20 {
         require(path.length == 2 && amountIn > 0, "Bad params");
 
         bytes32 k = _key(path[0], path[1]);
-        Pool storage p = pools[k];
-        require(p.totalLiquidity > 0, "Pool empty");
+        Pool memory _p = pools[k];
+        require(_p.totalLiquidity > 0, "Pool empty");
 
         /* current reserves (tokenA < tokenB) */
-        uint reserveIn  = p.reserveA;
-        uint reserveOut = p.reserveB;
+        uint reserveIn  = _p.reserveA;
+        uint reserveOut = _p.reserveB;
 
         uint amountOut = getAmountOut(amountIn, reserveIn, reserveOut);
         require(amountOut >= amountOutMin, "Slippage");
@@ -278,9 +282,10 @@ contract SimpleSwap is ERC20 {
         IERC20(path[1]).transfer(to, amountOut);
 
         /* update reserves */
-        p.reserveA += amountIn;
-        p.reserveB -= amountOut;
+        _p.reserveA += amountIn;
+        _p.reserveB -= amountOut;
 
+        pools[k] = _p;
         
     }
 }
