@@ -2,10 +2,12 @@
 
 A minimalistic web interface to interact with a smart contract for token swaps (like a simplified Uniswap). This frontend allows users to:
 
-- Connect their wallet via MetaMask.
+- Connect wallet via MetaMask.
 - Approve token transfers.
+- Preview amount to receive.
 - Swap Token A for Token B.
-- Check the current swap price from A to B.
+       Token B for Token A.
+- Check the current swap price from A to B and from B to A.
 
 ---
 ```text
@@ -37,22 +39,17 @@ A minimalistic web interface to interact with a smart contract for token swaps (
 
 ## Tests
 ```text
-# npx hardhat test
-
-Compiled 11 Solidity files successfully (evm target: paris).
-
-
-  SimpleSwap · core flows
-    ✔ Owner crea el pool y recibe LP
-    ✔ Alice agrega liquidez manteniendo ratio
-    ✔ getAmountOut respeta x·y=k
-    ✔ Bob intercambia TKA por TKB
-    ✔ Owner quema parte de su LP y recibe tokens
-    ✔ Rechaza swap si el pool no existe
-    ✔ Rechaza addLiquidity con deadline vencido
+ SimpleSwap · core flows
+    ✔ Someone creates pool an receives LT
+    ✔ Add liquidity keeping ratio
+    ✔ getAmountOut matches x·y=k
+    ✔ Exchange TKA by TKB
+    ✔ Owner burns LT and receives tokens
+    ✔ Revert swap if pool does not exists
+    ✔ Revert addLiquidity passing deadline
 
 
-  7 passing (162ms)
+  7 passing (163ms)
 
 ······················································································································
 |  Solidity and Network Configuration                                                                                │
@@ -65,11 +62,11 @@ Compiled 11 Solidity files successfully (evm target: paris).
 ·································|·················|···············|·················|················|···············
 |  SimpleSwap                    ·                                                                                   │
 ·································|·················|···············|·················|················|···············
-|      addLiquidity              ·        109,889  ·      211,305  ·        177,500  ·             3  ·           -  │
+|      addLiquidity              ·        109,470  ·      211,468  ·        177,469  ·             3  ·           -  │
 ·································|·················|···············|·················|················|···············
-|      removeLiquidity           ·              -  ·            -  ·         89,056  ·             1  ·           -  │
+|      removeLiquidity           ·              -  ·            -  ·         88,928  ·             1  ·           -  │
 ·································|·················|···············|·················|················|···············
-|      swapExactTokensForTokens  ·              -  ·            -  ·         75,109  ·             2  ·           -  │
+|      swapExactTokensForTokens  ·              -  ·            -  ·         75,275  ·             2  ·           -  │
 ·································|·················|···············|·················|················|···············
 |  Token                         ·                                                                                   │
 ·································|·················|···············|·················|················|···············
@@ -79,7 +76,7 @@ Compiled 11 Solidity files successfully (evm target: paris).
 ·································|·················|···············|·················|················|···············
 |  Deployments                                     ·                                 ·  % of limit    ·              │
 ·································|·················|···············|·················|················|···············
-|  SimpleSwap                    ·              -  ·            -  ·      2,312,388  ·         7.7 %  ·           -  │
+|  SimpleSwap                    ·              -  ·            -  ·      2,378,689  ·         7.9 %  ·           -  │
 ·································|·················|···············|·················|················|···············
 |  Token                         ·              -  ·            -  ·      1,077,421  ·         3.6 %  ·           -  │
 ·································|·················|···············|·················|················|···············
@@ -91,11 +88,7 @@ Compiled 11 Solidity files successfully (evm target: paris).
 ······················································································································
 |  Toolchain:  hardhat                                                                                               │
 ······················································································································
-```
-
-## Coverage
-```text
-# npx hardhat coverage
+(base) fmalaspina@notebook:~/simpleswap-dapp/backend$ npx hardhat coverage
 
 Version
 =======
@@ -122,13 +115,13 @@ Network Info
 
 
   SimpleSwap · core flows
-    ✔ Owner crea el pool y recibe LP
-    ✔ Alice agrega liquidez manteniendo ratio (62ms)
-    ✔ getAmountOut respeta x·y=k
-    ✔ Bob intercambia TKA por TKB
-    ✔ Owner quema parte de su LP y recibe tokens
-    ✔ Rechaza swap si el pool no existe
-    ✔ Rechaza addLiquidity con deadline vencido
+    ✔ Someone creates pool an receives LT
+    ✔ Add liquidity keeping ratio (56ms)
+    ✔ getAmountOut matches x·y=k
+    ✔ Exchange TKA by TKB (38ms)
+    ✔ Owner burns LT and receives tokens
+    ✔ Revert swap if pool does not exists
+    ✔ Revert addLiquidity passing deadline
 
 
   7 passing (328ms)
@@ -136,12 +129,11 @@ Network Info
 -----------------|----------|----------|----------|----------|----------------|
 File             |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
 -----------------|----------|----------|----------|----------|----------------|
- contracts/      |     88.1 |    55.88 |    88.89 |     87.3 |                |
-  SimpleSwap.sol |     87.5 |    55.88 |    85.71 |    86.89 |... 236,237,239 |
+ contracts/      |     88.1 |    55.88 |    88.89 |    87.88 |                |
+  SimpleSwap.sol |     87.5 |    55.88 |    85.71 |     87.5 |... 239,241,243 |
   Token.sol      |      100 |      100 |      100 |      100 |                |
 -----------------|----------|----------|----------|----------|----------------|
-All files        |     88.1 |    55.88 |    88.89 |     87.3 |                |
+All files        |     88.1 |    55.88 |    88.89 |    87.88 |                |
 -----------------|----------|----------|----------|----------|----------------|
 
-> Istanbul reports written to ./coverage/ and ./coverage.json
 ```
