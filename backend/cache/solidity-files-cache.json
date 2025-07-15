@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/fmalaspina/simpleswap-dapp/backend/contracts/SimpleSwap.sol": {
-      "lastModificationDate": 1752263586825,
-      "contentHash": "afb43aa1abacd8b93982b9f76db79517",
+      "lastModificationDate": 1752594072323,
+      "contentHash": "13226d6306d1fe325b22bd47e2497715",
       "sourceName": "contracts/SimpleSwap.sol",
       "solcConfig": {
         "version": "0.8.30",

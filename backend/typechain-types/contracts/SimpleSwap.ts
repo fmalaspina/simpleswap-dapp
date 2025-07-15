@@ -43,7 +43,14 @@ export interface SimpleSwapInterface extends Interface {
       | "transferFrom"
   ): FunctionFragment;
 
-  getEvent(nameOrSignatureOrTopic: "Approval" | "Transfer"): EventFragment;
+  getEvent(
+    nameOrSignatureOrTopic:
+      | "Approval"
+      | "LiquidityAdded"
+      | "LiquidityRemoved"
+      | "Swap"
+      | "Transfer"
+  ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "addLiquidity",
@@ -163,6 +170,99 @@ export namespace ApprovalEvent {
     owner: string;
     spender: string;
     value: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace LiquidityAddedEvent {
+  export type InputTuple = [
+    sender: AddressLike,
+    tokenA: AddressLike,
+    tokenB: AddressLike,
+    amountASent: BigNumberish,
+    amountBSent: BigNumberish,
+    liquidity: BigNumberish
+  ];
+  export type OutputTuple = [
+    sender: string,
+    tokenA: string,
+    tokenB: string,
+    amountASent: bigint,
+    amountBSent: bigint,
+    liquidity: bigint
+  ];
+  export interface OutputObject {
+    sender: string;
+    tokenA: string;
+    tokenB: string;
+    amountASent: bigint;
+    amountBSent: bigint;
+    liquidity: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace LiquidityRemovedEvent {
+  export type InputTuple = [
+    recipient: AddressLike,
+    tokenA: AddressLike,
+    tokenB: AddressLike,
+    amountASent: BigNumberish,
+    amountBSent: BigNumberish,
+    liquidity: BigNumberish
+  ];
+  export type OutputTuple = [
+    recipient: string,
+    tokenA: string,
+    tokenB: string,
+    amountASent: bigint,
+    amountBSent: bigint,
+    liquidity: bigint
+  ];
+  export interface OutputObject {
+    recipient: string;
+    tokenA: string;
+    tokenB: string;
+    amountASent: bigint;
+    amountBSent: bigint;
+    liquidity: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace SwapEvent {
+  export type InputTuple = [
+    sender: AddressLike,
+    recipient: AddressLike,
+    tokenIn: AddressLike,
+    tokenOut: AddressLike,
+    amountIn: BigNumberish,
+    amountOut: BigNumberish
+  ];
+  export type OutputTuple = [
+    sender: string,
+    recipient: string,
+    tokenIn: string,
+    tokenOut: string,
+    amountIn: bigint,
+    amountOut: bigint
+  ];
+  export interface OutputObject {
+    sender: string;
+    recipient: string;
+    tokenIn: string;
+    tokenOut: string;
+    amountIn: bigint;
+    amountOut: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -469,6 +569,27 @@ export interface SimpleSwap extends BaseContract {
     ApprovalEvent.OutputObject
   >;
   getEvent(
+    key: "LiquidityAdded"
+  ): TypedContractEvent<
+    LiquidityAddedEvent.InputTuple,
+    LiquidityAddedEvent.OutputTuple,
+    LiquidityAddedEvent.OutputObject
+  >;
+  getEvent(
+    key: "LiquidityRemoved"
+  ): TypedContractEvent<
+    LiquidityRemovedEvent.InputTuple,
+    LiquidityRemovedEvent.OutputTuple,
+    LiquidityRemovedEvent.OutputObject
+  >;
+  getEvent(
+    key: "Swap"
+  ): TypedContractEvent<
+    SwapEvent.InputTuple,
+    SwapEvent.OutputTuple,
+    SwapEvent.OutputObject
+  >;
+  getEvent(
     key: "Transfer"
   ): TypedContractEvent<
     TransferEvent.InputTuple,
@@ -486,6 +607,39 @@ export interface SimpleSwap extends BaseContract {
       ApprovalEvent.InputTuple,
       ApprovalEvent.OutputTuple,
       ApprovalEvent.OutputObject
+    >;
+
+    "LiquidityAdded(address,address,address,uint256,uint256,uint256)": TypedContractEvent<
+      LiquidityAddedEvent.InputTuple,
+      LiquidityAddedEvent.OutputTuple,
+      LiquidityAddedEvent.OutputObject
+    >;
+    LiquidityAdded: TypedContractEvent<
+      LiquidityAddedEvent.InputTuple,
+      LiquidityAddedEvent.OutputTuple,
+      LiquidityAddedEvent.OutputObject
+    >;
+
+    "LiquidityRemoved(address,address,address,uint256,uint256,uint256)": TypedContractEvent<
+      LiquidityRemovedEvent.InputTuple,
+      LiquidityRemovedEvent.OutputTuple,
+      LiquidityRemovedEvent.OutputObject
+    >;
+    LiquidityRemoved: TypedContractEvent<
+      LiquidityRemovedEvent.InputTuple,
+      LiquidityRemovedEvent.OutputTuple,
+      LiquidityRemovedEvent.OutputObject
+    >;
+
+    "Swap(address,address,address,address,uint256,uint256)": TypedContractEvent<
+      SwapEvent.InputTuple,
+      SwapEvent.OutputTuple,
+      SwapEvent.OutputObject
+    >;
+    Swap: TypedContractEvent<
+      SwapEvent.InputTuple,
+      SwapEvent.OutputTuple,
+      SwapEvent.OutputObject
     >;
 
     "Transfer(address,address,uint256)": TypedContractEvent<

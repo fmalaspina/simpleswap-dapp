@@ -39,6 +39,7 @@ contract SimpleSwap is ERC20 {
     /// @notice Mapping from `keccak256(token0, token1)` to pool data
     mapping(bytes32 => Pool) public pools;
 
+
     /* ────────────────────────────────────────────────────────────
                                CONSTRUCTOR
        ────────────────────────────────────────────────────────── */
@@ -48,6 +49,44 @@ contract SimpleSwap is ERC20 {
      *      Name / symbol follow the assignment requirement.
      */
     constructor() ERC20("Liquidity Token", "LT") {}
+
+    /* ────────────────────────────────────────────────────────────
+                               EVENTS
+       ────────────────────────────────────────────────────────── */
+
+    /**
+     * @notice Emitted when a user adds liquidity to a pool.
+     * @param sender Address of token sender
+     * @param tokenA Address of token A
+     * @param tokenB Address of token B
+     * @param amountASent Amount of tokenA the user sent to the pool
+     * @param amountBSent Amount of tokenB the user sent to the pool
+     * @param liquidity Amount of liquidity tokens minted to the user 
+     */
+    event LiquidityAdded(address indexed sender, address indexed tokenA, address indexed tokenB, uint amountASent, uint amountBSent, uint liquidity);
+    
+    /**
+     * @notice Emitted when a user removes liquidity from a pool
+     * @param recipient address of token recipient
+     * @param tokenA Address of token A
+     * @param tokenB Address of token B
+     * @param amountASent Amount of tokenA sent to the recipient
+     * @param amountBSent Amount of tokenB sent to the recipient
+     * @param liquidity Amount of liquidity tokens burnt 
+     */
+    event LiquidityRemoved(address indexed recipient, address indexed tokenA, address indexed tokenB, uint amountASent, uint amountBSent, uint liquidity);
+
+    /**
+     * @notice Emitted when a user swaps tokens
+     * @param sender Address of token in sender
+     * @param recipient Address of token out recipient 
+     * @param tokenIn Address of token in
+     * @param tokenOut Address of token out
+     * @param amountIn Amount of token sent to the pool
+     * @param amountOut Amount of token extracted from the pool
+     */
+    event Swap(address indexed sender, address indexed recipient, address tokenIn, address tokenOut, uint amountIn, uint amountOut);
+
 
     /* ────────────────────────────────────────────────────────────
                             INTERNAL HELPERS
@@ -144,7 +183,7 @@ contract SimpleSwap is ERC20 {
 
         /* ―― mint LP tokens ―― */
         _mint(to, liquidity);
-
+        emit LiquidityAdded(msg.sender, tokenA, tokenB, amountASent, amountBSent, liquidity);
         return (amountASent, amountBSent, liquidity);
     }
 
@@ -197,7 +236,7 @@ contract SimpleSwap is ERC20 {
         /* transfer underlying tokens */
         IERC20(tokenA).transfer(to, amountASent);
         IERC20(tokenB).transfer(to, amountBSent);
-
+        emit LiquidityRemoved(msg.sender, tokenA, tokenB, amountASent, amountBSent, liquidity);
         return (amountASent, amountBSent);
     }
 
@@ -286,6 +325,8 @@ contract SimpleSwap is ERC20 {
         _p.reserveB -= amountOut;
 
         pools[k] = _p;
+
+        emit Swap(msg.sender, to, path[0], path[1], amountIn, amountOut);
         
     }
 }
