@@ -8,7 +8,7 @@ A minimalistic web interface to interact with a smart contract for token swaps (
 - Swap Token A for Token B.
        Token B for Token A.
 - Check the current swap price from A to B and from B to A.
-
+- Watch contract events on a console
 ---
 ```text
 ## 📁 Project Structure

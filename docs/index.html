@@ -20,7 +20,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>SimpleSwap Front-end</h1>
+    <h1>SimpleSwap</h1>
 
     <!-- Connect / Disconnect -->
     <button id="connectBtn">Connect</button>
@@ -53,6 +53,19 @@
     <button onclick="updatePrices()">Refresh Prices</button>
     <p id="priceAB">–</p>
     <p id="priceBA">–</p>
+
+    <button id="toggleLogBtn">Show events</button>
+    <pre id="eventLog"
+         style="display:none;
+                height:200px;
+                overflow:auto;
+                background:#0d0d0d;
+                color:#00ff88;
+                padding:8px;
+                border:1px solid #333;
+                font-family:monospace;
+                font-size:0.9rem;">
+    </pre>
   </div>
 
   <!-- dApp logic-->
